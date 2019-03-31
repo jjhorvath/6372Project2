@@ -1,0 +1,57 @@
+data pima;
+infile '/folders/myfolders/Stats 2/Pima.csv' firstobs=2 dlm=',';
+input pregnant glucose pressure triceps insulin mass pedigree age diabetes;
+if pregnant > 0 then do; log_pregnant = log(pregnant); end; else do; log_pregnant = 0; end;
+if insulin > 0 then do; log_insulin = log(insulin); end; else do; log_insulin = 0; end;
+if mass > 0 then do; log_mass = log(mass); end; else do; log_mass = 0; end;
+if pedigree > 0 then do; log_pedigree = log(pedigree); end; else do; log_pedigree = 0; end;
+if age > 0 then do; log_age = log(age); end; else do; log_age = 0; end;
+run;
+
+proc sgscatter data=pima;
+matrix pregnant glucose pressure triceps insulin mass pedigree age diabetes / diagonal=(histogram);
+run;
+
+proc sgscatter data=pima;
+matrix log_pregnant glucose pressure triceps log_insulin log_mass log_pedigree log_age diabetes / diagonal=(histogram);
+run;
+
+proc corr data=pima;
+var pregnant glucose pressure triceps insulin mass pedigree age diabetes;
+run;
+
+proc glm data=pima plots=all;
+class diabetes;
+model diabetes = pregnant glucose pressure triceps insulin mass pedigree age / clparm solution;
+run;
+
+proc glm data=pima plots=all;
+class diabetes;
+model diabetes = log_pregnant glucose pressure triceps log_insulin log_mass log_pedigree log_age / clparm solution;
+run;
+
+proc glmselect data=pima plots=all;
+class diabetes;
+model diabetes = log_pregnant glucose pressure triceps log_insulin log_mass log_pedigree log_age / selection=LASSO( choose=CV stop=CV) CVdetails;
+run;
+
+proc princomp plots=all data=pima cov out=pca;
+var log_pregnant glucose pressure triceps log_insulin log_mass log_pedigree log_age;
+run;
+
+proc glmselect data=pca plots=all;
+model diabetes = Prin1-Prin8 / selection=LASSO( choose=CV stop=CV) CVdetails;
+run;
+
+proc princomp plots=all data=pima cov out=pca1;
+var pregnant glucose pressure triceps insulin mass pedigree age;
+run;
+
+proc glmselect data=pca1 plots=all;
+model diabetes = Prin1-Prin8 / selection=LASSO( choose=CV stop=CV) CVdetails;
+run;
+
+proc logistic data=pima descending;
+class diabetes / param=ref;
+model diabetes = log_pregnant glucose pressure triceps log_insulin log_mass log_pedigree log_age / lackfit ctable clparm=both;
+run;
