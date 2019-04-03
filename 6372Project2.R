@@ -73,9 +73,10 @@ confutable<-table(test[,'diabetes'],test_pred)
 
 #chart with two y-axis showing accuracy and misclassification. Best value appears to be nn=30. Wow.
 par(mar = c(5,5,2,5))
-with(knndf, plot(V1, V2, col="red", pch=16, ylab="Accuracy"))
+with(knndf, plot(V1, V2, col="red", pch=16, ylab="Accuracy", xlab="Nearest Neighbors"))
 par(new = T)
 with(knndf, plot(V1, V3, pch=16, axes=F, xlab=NA, col="blue", ylab=NA, cex=1.2))
 axis(side = 4)
 mtext(side = 4, line = 3, 'Misclassification')
 legend("topleft", legend=c("Accuracy", "Misclassification"), pch=16, col=c("red", "blue"))
+
