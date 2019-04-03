@@ -80,3 +80,55 @@ axis(side = 4)
 mtext(side = 4, line = 3, 'Misclassification')
 legend("topleft", legend=c("Accuracy", "Misclassification"), pch=16, col=c("red", "blue"))
 
+boxplot(Pima$glucose~Pima$diabetes)
+boxplot(Pima$insulin~Pima$diabetes, ylim=c(0,300))
+boxplot(Pima$pregnant~Pima$diabetes)
+boxplot(Pima$triceps~Pima$diabetes)
+boxplot(Pima$mass~Pima$diabetes)
+boxplot(Pima$pedigree~Pima$diabetes)
+boxplot(Pima$age~Pima$diabetes)
+
+#my own homemade model...kinda logistic regression based on eyeballing the charts. This one is 75.5102% correct
+Pima$Guess<-0
+Pima$Guess[Pima$glucose>130]<-1
+Pima$IsCorrect[Pima$diabetes == Pima$Guess]<-1
+Pima$IsCorrect[Pima$diabetes != Pima$Guess]<-0
+sum(Pima$IsCorrect)/length(Pima$IsCorrect)
+
+#this one is 76.27551% accurate. 
+Pima$Guess<-0
+Pima$Guess[Pima$glucose>130 & Pima$insulin>80]<-1
+Pima$IsCorrect[Pima$diabetes == Pima$Guess]<-1
+Pima$IsCorrect[Pima$diabetes != Pima$Guess]<-0
+sum(Pima$IsCorrect)/length(Pima$IsCorrect)
+
+#making a plot of accuracy of placement based on if we are guessing diabetes just based on glucose levels
+Pima$Guess<-0
+Pima$Guess[Pima$glucose>59]<-1
+Pima$IsCorrect[Pima$diabetes == Pima$Guess]<-1
+Pima$IsCorrect[Pima$diabetes != Pima$Guess]<-0
+sum(Pima$IsCorrect)/length(Pima$IsCorrect)
+plot(x=59, y=sum(Pima$IsCorrect)/length(Pima$IsCorrect), xlim=c(59,200), ylim=c(0,1))
+for (i in 60:200){
+  Pima$Guess<-0
+  Pima$Guess[Pima$glucose>i]<-1
+  Pima$IsCorrect[Pima$diabetes == Pima$Guess]<-1
+  Pima$IsCorrect[Pima$diabetes != Pima$Guess]<-0
+  points(x=i, y=sum(Pima$IsCorrect)/length(Pima$IsCorrect))
+}
+
+
+#making a plot of accuracy now that I think glucose over 130 is diabetes, I want to know about insulin.
+Pima$Guess<-0
+Pima$Guess[Pima$glucose>130 & Pima$insulin>59]<-1
+Pima$IsCorrect[Pima$diabetes == Pima$Guess]<-1
+Pima$IsCorrect[Pima$diabetes != Pima$Guess]<-0
+sum(Pima$IsCorrect)/length(Pima$IsCorrect)
+plot(x=59, y=sum(Pima$IsCorrect)/length(Pima$IsCorrect), xlim=c(59,300), ylim=c(0,1))
+for (i in 60:300){
+  Pima$Guess<-0
+  Pima$Guess[Pima$glucose>130 & Pima$insulin>i]<-1
+  Pima$IsCorrect[Pima$diabetes == Pima$Guess]<-1
+  Pima$IsCorrect[Pima$diabetes != Pima$Guess]<-0
+  points(x=i, y=sum(Pima$IsCorrect)/length(Pima$IsCorrect))
+}
