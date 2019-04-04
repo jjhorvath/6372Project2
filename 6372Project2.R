@@ -80,13 +80,24 @@ axis(side = 4)
 mtext(side = 4, line = 3, 'Misclassification')
 legend("topleft", legend=c("Accuracy", "Misclassification"), pch=16, col=c("red", "blue"))
 
+
+summary(aov(Pima$glucose~Pima$diabetes)) #<2e-16
+summary(aov(Pima$insulin~Pima$diabetes)) #1.12e-09
+summary(aov(Pima$pregnant~Pima$diabetes)) #2.61e-07
+summary(aov(Pima$triceps~Pima$diabetes)) #2.79e-07
+summary(aov(Pima$mass~Pima$diabetes)) #5.56e-08
+summary(aov(Pima$pedigree~Pima$diabetes)) #2.95e-05
+summary(aov(Pima$age~Pima$diabetes)) #8.56e-13
+
+barplot(names.arg = c("Glucose","age", "insulin", "mass", "preg","tri" ,"pedigree."), height=log(c(2e-16, 8.56e-13, 1.12e-09, 5.56e-08, 2.61e-07, 2.79e-07, 2.95e-05)))
+
 boxplot(Pima$glucose~Pima$diabetes)
 boxplot(Pima$insulin~Pima$diabetes, ylim=c(0,300))
 boxplot(Pima$pregnant~Pima$diabetes)
 boxplot(Pima$triceps~Pima$diabetes)
 boxplot(Pima$mass~Pima$diabetes)
 boxplot(Pima$pedigree~Pima$diabetes)
-boxplot(Pima$age~Pima$diabetes)
+boxplot(Pima$age~Pima$diabetes, ylim=c(18,60))
 
 #my own homemade model...kinda logistic regression based on eyeballing the charts. This one is 75.5102% correct
 Pima$Guess<-0
@@ -102,6 +113,14 @@ Pima$IsCorrect[Pima$diabetes == Pima$Guess]<-1
 Pima$IsCorrect[Pima$diabetes != Pima$Guess]<-0
 sum(Pima$IsCorrect)/length(Pima$IsCorrect)
 
+#this one is 76.27551% accurate. Age doesn't really seem to add more info.
+Pima$Guess<-0
+Pima$Guess[Pima$glucose>130 & Pima$insulin>80 & Pima$age>20]<-1
+Pima$IsCorrect[Pima$diabetes == Pima$Guess]<-1
+Pima$IsCorrect[Pima$diabetes != Pima$Guess]<-0
+sum(Pima$IsCorrect)/length(Pima$IsCorrect)
+
+
 #making a plot of accuracy of placement based on if we are guessing diabetes just based on glucose levels
 Pima$Guess<-0
 Pima$Guess[Pima$glucose>59]<-1
@@ -112,6 +131,21 @@ plot(x=59, y=sum(Pima$IsCorrect)/length(Pima$IsCorrect), xlim=c(59,200), ylim=c(
 for (i in 60:200){
   Pima$Guess<-0
   Pima$Guess[Pima$glucose>i]<-1
+  Pima$IsCorrect[Pima$diabetes == Pima$Guess]<-1
+  Pima$IsCorrect[Pima$diabetes != Pima$Guess]<-0
+  points(x=i, y=sum(Pima$IsCorrect)/length(Pima$IsCorrect))
+}
+
+#making a plot of accuracy of placement based on if we are guessing diabetes just based on age
+Pima$Guess<-0
+Pima$Guess[Pima$age>20]<-1
+Pima$IsCorrect[Pima$age == Pima$Guess]<-1
+Pima$IsCorrect[Pima$age != Pima$Guess]<-0
+sum(Pima$IsCorrect)/length(Pima$IsCorrect)
+plot(x=20, y=sum(Pima$IsCorrect)/length(Pima$IsCorrect), xlim=c(20,80), ylim=c(0,1))
+for (i in 21:80){
+  Pima$Guess<-0
+  Pima$Guess[Pima$age>i]<-1
   Pima$IsCorrect[Pima$diabetes == Pima$Guess]<-1
   Pima$IsCorrect[Pima$diabetes != Pima$Guess]<-0
   points(x=i, y=sum(Pima$IsCorrect)/length(Pima$IsCorrect))
@@ -132,3 +166,19 @@ for (i in 60:300){
   Pima$IsCorrect[Pima$diabetes != Pima$Guess]<-0
   points(x=i, y=sum(Pima$IsCorrect)/length(Pima$IsCorrect))
 }
+
+#here is a logit model with accuracy on average of 77.12%
+splits <- sample(1:nrow(Pima),as.integer(0.7*nrow(Pima))) # Split Pima into training and testing
+train <- Pima[splits,]
+test <- Pima[-splits,]
+
+logitmodel <- glm(train$diabetes ~ . , data=train, family=binomial(link="logit"))
+summary(logitmodel)
+anova(logitmodel, test="Chisq")
+
+fitted.results <- predict(logitmodel,newdata=test,type='response')
+fitted.results <- ifelse(fitted.results > 0.5,1,0)
+
+misClasificError <- mean(fitted.results != test$diabetes)
+print(paste('Accuracy',1-misClasificError))
+
