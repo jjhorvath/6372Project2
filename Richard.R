@@ -1,4 +1,4 @@
-# Richard's R File
+# Richard's R Files
 require("mlbench")
 require("corrplot")
 data(PimaIndiansDiabetes2,package = "mlbench") #see note about correction to dataset at https://www.rdocumentation.org/packages/mlbench/versions/2.1-1/topics/PimaIndiansDiabetes
