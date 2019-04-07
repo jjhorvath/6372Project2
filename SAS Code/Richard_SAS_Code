@@ -8,49 +8,108 @@ if pedigree > 0 then do; log_pedigree = log(pedigree); end; else do; log_pedigre
 if age > 0 then do; log_age = log(age); end; else do; log_age = 0; end;
 run;
 
+/*********** EDA ***************************************************/
+/* Scatter Plot of original Variables */
 proc sgscatter data=pima;
 matrix pregnant glucose pressure triceps insulin mass pedigree age diabetes / diagonal=(histogram);
 run;
 
+/* Scatter Plot of Log Transformations */
 proc sgscatter data=pima;
 matrix log_pregnant glucose pressure triceps log_insulin log_mass log_pedigree log_age diabetes / diagonal=(histogram);
 run;
 
+/* Correlation plot of original variables */
 proc corr data=pima;
 var pregnant glucose pressure triceps insulin mass pedigree age diabetes;
 run;
+/*********** EDA ***************************************************/
 
+/*********** MLR Original ***************************************************/
+/* Linear Regression of original Variables */
 proc glm data=pima plots=all;
+title "Non Log Transformation";
 class diabetes;
 model diabetes = pregnant glucose pressure triceps insulin mass pedigree age / clparm solution;
 run;
 
+/* Regression checking for collinearity using VIF */
+proc reg data=pima plots=all;
+title "Non Log Transformation";
+model diabetes = pregnant glucose pressure triceps insulin mass pedigree age / vif;
+run;
+/*********** MLR Original ***************************************************/
+
+
+/*********** MLR LOG Trans ***************************************************/
+/* Linear Regression of Log Transformations */
 proc glm data=pima plots=all;
+title "Log Transformations of Pregnant, Mass, Pedigree, and Age";
 class diabetes;
 model diabetes = log_pregnant glucose pressure triceps log_insulin log_mass log_pedigree log_age / clparm solution;
 run;
 
+/* LASSO Variable Selection using CV as stop using Log Transformations*/
 proc glmselect data=pima plots=all;
 class diabetes;
 model diabetes = log_pregnant glucose pressure triceps log_insulin log_mass log_pedigree log_age / selection=LASSO( choose=CV stop=CV) CVdetails;
 run;
 
+/* Proc reg of the selected features of the log transformed variables completed above */
+proc reg data=pima plots=all;
+model diabetes = glucose triceps log_mass log_pedigree log_age / vif;
+run; 
+
+/* Proc glm of the selected features of the log transformed variables completed above */
+proc glm data=pima plots=all;
+class diabetes;
+model diabetes = glucose triceps log_mass log_pedigree log_age / clparm solution;
+run;
+
+/* Proc reg of the selected features of the log transformed and removing Triceps */
+proc reg data=pima plots=all;
+model diabetes = glucose log_mass log_pedigree log_age / vif;
+run; 
+
+/* Regression of Log Transformations checking for collinearity using VIF */
+proc reg data=pima plots=all;
+title "Log Transformations of Pregnant, Mass, Pedigree, and Age";
+model diabetes = log_pregnant glucose pressure triceps log_insulin log_mass log_pedigree log_age / vif;
+run;
+/*********** MLR LOG Trans ***************************************************/
+
+/*********** PCA ***************************************************/
+/* Principle Component Analysis of Log Transformations */
 proc princomp plots=all data=pima cov out=pca;
 var log_pregnant glucose pressure triceps log_insulin log_mass log_pedigree log_age;
 run;
 
+/* LASSO Variable Selection using CV as stop of Prin1-8 */
 proc glmselect data=pca plots=all;
 model diabetes = Prin1-Prin8 / selection=LASSO( choose=CV stop=CV) CVdetails;
 run;
 
+proc glm data=pca plots=all;
+class diabetes;
+model diabetes = Prin1 Prin2 Prin3 / clparm solution;
+run;
+
+proc reg data=pca plots=all;
+model diabetes = Prin1 Prin2 Prin3 / vif;
+run;
+
+/* Principle Component Analysis of Original Variables */
 proc princomp plots=all data=pima cov out=pca1;
 var pregnant glucose pressure triceps insulin mass pedigree age;
 run;
 
+/* LASSO Variable Selection using CV as stop of Prin1-8 */
 proc glmselect data=pca1 plots=all;
 model diabetes = Prin1-Prin8 / selection=LASSO( choose=CV stop=CV) CVdetails;
 run;
+/*********** PCA ***************************************************/
 
+/* Logistic Regression of Log Transformations */
 proc logistic data=pima descending;
 class diabetes / param=ref;
 model diabetes = log_pregnant glucose pressure triceps log_insulin log_mass log_pedigree log_age / lackfit ctable clparm=both;
