@@ -47,14 +47,24 @@ arrows(0, 0, X[,1], X[,2], len=0.1, col="red")
 text(1.1*X, rownames(X), col="red", xpd=T)
 print(a)
 
+data(PimaIndiansDiabetes2,package = "mlbench") #see note about correction to dataset at https://www.rdocumentation.org/packages/mlbench/versions/2.1-1/topics/PimaIndiansDiabetes
+Pima <- PimaIndiansDiabetes2;
+rm(PimaIndiansDiabetes2)
+Pima$diabetes<-as.numeric(Pima$diabetes) #changing diabetes from a factor to numeric
+Pima$diabetes<-Pima$diabetes-1
+Pima<-Pima[complete.cases(Pima),] 
+
+#this plot shows diabetes status (red=no blue=yes) when plotted on age vs. glucose. There are two distinct clusters. kNN does this but with more variables.
+plot(x=Pima$glucose, y=Pima$age, pch=16, col=c('Red', 'Blue')[as.numeric(Pima$diabetes+1)], xlab="Glucose", ylab="Age")
+
 #k nearest neighbors on the Pima data set
 splits <- sample(1:nrow(Pima),as.integer(0.7*nrow(Pima))) # Split Pima into training and testing
 train <- Pima[splits,]
 test <- Pima[-splits,]
 
-#3-nearest neighbours
+#20-nearest neighbours
 train_labels <- train[, 9]
-test_pred <- knn(train = train, test = test,cl = train_labels, k=3)
+test_pred <- knn(train = train, test = test,cl = train_labels, k=20)
 table(test[,'diabetes'],test_pred) #confusion matrix
 confutable<-table(test[,'diabetes'],test_pred)
 #for k=3 neighbors:
@@ -88,16 +98,22 @@ summary(aov(Pima$triceps~Pima$diabetes)) #2.79e-07
 summary(aov(Pima$mass~Pima$diabetes)) #5.56e-08
 summary(aov(Pima$pedigree~Pima$diabetes)) #2.95e-05
 summary(aov(Pima$age~Pima$diabetes)) #8.56e-13
+summary(aov(Pima$pressure~Pima$diabetes)) #0.000124
 
-barplot(names.arg = c("Glucose","age", "insulin", "mass", "preg","tri" ,"pedigree."), height=log(c(2e-16, 8.56e-13, 1.12e-09, 5.56e-08, 2.61e-07, 2.79e-07, 2.95e-05)))
+barplot(names.arg = c("Glucose","age", "insulin", "mass", "preg","tri" ,"pedigree", "pressure"), height=log(c(2e-16, 8.56e-13, 1.12e-09, 5.56e-08, 2.61e-07, 2.79e-07, 2.95e-05, 0.000124)))
 
-boxplot(Pima$glucose~Pima$diabetes)
-boxplot(Pima$insulin~Pima$diabetes, ylim=c(0,300))
-boxplot(Pima$pregnant~Pima$diabetes)
-boxplot(Pima$triceps~Pima$diabetes)
-boxplot(Pima$mass~Pima$diabetes)
-boxplot(Pima$pedigree~Pima$diabetes)
-boxplot(Pima$age~Pima$diabetes, ylim=c(18,60))
+
+par(mfrow=c(1,3))
+boxplot(Pima$glucose~Pima$diabetes, varwidth=T, main="Glucose", xlab="Diabetes")
+boxplot(Pima$age~Pima$diabetes, ylim=c(18,60), main="Age", xlab="Diabetes")
+boxplot(Pima$insulin~Pima$diabetes, ylim=c(0,300), main="Insulin", xlab="Diabetes")
+par(mfrow=c(1,1))
+boxplot(Pima$pregnant~Pima$diabetes, main="Pregnancies", xlab="Diabetes")
+boxplot(Pima$triceps~Pima$diabetes, main="Triceps", xlab="Diabetes")
+boxplot(Pima$mass~Pima$diabetes, main="BMI, 'Mass'", xlab="Diabetes")
+boxplot(Pima$pedigree~Pima$diabetes, main="Pedigree", xlab="Diabetes")
+boxplot(Pima$pressure~Pima$diabetes, main="Pressure", xlab="Diabetes")
+
 
 #my own homemade model...kinda logistic regression based on eyeballing the charts. This one is 75.5102% correct
 Pima$Guess<-0
@@ -127,7 +143,7 @@ Pima$Guess[Pima$glucose>59]<-1
 Pima$IsCorrect[Pima$diabetes == Pima$Guess]<-1
 Pima$IsCorrect[Pima$diabetes != Pima$Guess]<-0
 sum(Pima$IsCorrect)/length(Pima$IsCorrect)
-plot(x=59, y=sum(Pima$IsCorrect)/length(Pima$IsCorrect), xlim=c(59,200), ylim=c(0,1))
+plot(x=59, y=sum(Pima$IsCorrect)/length(Pima$IsCorrect), xlim=c(59,200), ylim=c(0,1), ylab="Classification Accuracy", xlab="Threshold glucose level")
 for (i in 60:200){
   Pima$Guess<-0
   Pima$Guess[Pima$glucose>i]<-1
@@ -135,22 +151,22 @@ for (i in 60:200){
   Pima$IsCorrect[Pima$diabetes != Pima$Guess]<-0
   points(x=i, y=sum(Pima$IsCorrect)/length(Pima$IsCorrect))
 }
+abline(v=130, col="red")
 
 #making a plot of accuracy of placement based on if we are guessing diabetes just based on age
 Pima$Guess<-0
-Pima$Guess[Pima$age>20]<-1
+Pima$Guess[Pima$age>18]<-1
 Pima$IsCorrect[Pima$age == Pima$Guess]<-1
 Pima$IsCorrect[Pima$age != Pima$Guess]<-0
 sum(Pima$IsCorrect)/length(Pima$IsCorrect)
-plot(x=20, y=sum(Pima$IsCorrect)/length(Pima$IsCorrect), xlim=c(20,80), ylim=c(0,1))
-for (i in 21:80){
+plot(x=18, y=sum(Pima$IsCorrect)/length(Pima$IsCorrect), xlim=c(18,80), ylim=c(0,1))
+for (i in 19:80){
   Pima$Guess<-0
   Pima$Guess[Pima$age>i]<-1
   Pima$IsCorrect[Pima$diabetes == Pima$Guess]<-1
   Pima$IsCorrect[Pima$diabetes != Pima$Guess]<-0
   points(x=i, y=sum(Pima$IsCorrect)/length(Pima$IsCorrect))
 }
-
 
 #making a plot of accuracy now that I think glucose over 130 is diabetes, I want to know about insulin.
 Pima$Guess<-0
@@ -167,6 +183,8 @@ for (i in 60:300){
   points(x=i, y=sum(Pima$IsCorrect)/length(Pima$IsCorrect))
 }
 
+Pima<-Pima[,1:9]
+
 #here is a logit model with accuracy on average of 77.12%
 splits <- sample(1:nrow(Pima),as.integer(0.7*nrow(Pima))) # Split Pima into training and testing
 train <- Pima[splits,]
@@ -182,3 +200,5 @@ fitted.results <- ifelse(fitted.results > 0.5,1,0)
 misClasificError <- mean(fitted.results != test$diabetes)
 print(paste('Accuracy',1-misClasificError))
 
+#running the logit ten times got me these accuracies. The mean is calculated below. It's 80.51%
+mean(0.805084745762712,0.779661016949153,0.771186440677966, 0.796610169491525, 0.745762711864407, 0.771186440677966, 0.796610169491525, 0.745762711864407, 0.796610169491525, 0.847457627118644)
